@@ -3,6 +3,7 @@
  *
  * This file exports a simple implementation
  * of Vector class based on the array.
+ 
  */
 
 #ifndef VECTORSHPP_H
