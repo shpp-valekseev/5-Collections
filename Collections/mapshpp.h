@@ -1,19 +1,16 @@
-/* File: mapshpp.h
- * -----------------------------------------------------
- * This file exports a simple version of the Map class
- * based on the vector.
+/* File:: mapshpp.h
+ * --------------------------------------------------
+ * This interface exports simple version of map
+ * based on AVL binary search tree
  */
-
 #ifndef MAPSHPP
 #define MAPSHPP
 
 #include <iostream>
-#include <stdlib.h>
-#include <vectorshpp.h>
 
 
-/* Class: MapSHPP<ValueType> map;
- * ---------------------------------------------------
+/* Class: MapSHPP
+ * -------------------------------------------------
  * This class implements map of a specified ValueType
  * elements
  */
@@ -23,17 +20,18 @@ class MapSHPP{
     /* Public methods prototypes*/
 public:
 
+
     /* Constructor: MapSHPP
-     * Usage: MapSHPP<ValueType> map;
-     * -----------------------------------------------
+     * Usage: MapSHPP<KeyType, ValueType> map;
+     * -----------------------------------------------------
      * Initializes a new empty map
      */
     MapSHPP();
 
     /* Destructor: ~MapSHPP
-     * ----------------------------------------------
-     * Frees all allocated memory for the map elements
-     */
+    * ----------------------------------------------
+    * Frees all allocated memory for the map elements
+    */
     virtual ~MapSHPP();
 
     /* Method: put
@@ -49,14 +47,14 @@ public:
      * -----------------------------------------------
      * Returns the value of the corresponding key
      */
-    ValueType get(KeyType);
+    ValueType get(KeyType key);
 
     /* Method: isEmpty
      * Usage: if (map.isEmpty());
      * -----------------------------------------------
      * Returns true if map is empty
      */
-    bool isEmpty()const;
+    bool isEmpty();
 
     /* Method: clear
      * Usage: map.clear();
@@ -71,7 +69,7 @@ public:
      * Return current number of the elements of the
      * map
      */
-    int size() const;
+    int size();
 
     /* Method: remove
      * Usage: map.remuve(key);
@@ -80,13 +78,6 @@ public:
      */
     void remove(KeyType);
 
-    /* Method: getKey
-     * Usage: KeyType key = map.getKey(int);
-     * -----------------------------------------------------
-     * Return key of the map corresponding to the index
-     */
-    KeyType getKey(int);
-
     /* Method: containsKey
      * Usage: if (map.containsKey(key))
      * -----------------------------------------------------
@@ -94,114 +85,319 @@ public:
      */
     bool containsKey(KeyType key);
 
+    /* Operator: []
+     * Usage: map[key] = value;
+     * ---------------------------------------------------
+     * Returns link to value by the specfied key.
+     */
+    ValueType& operator[](KeyType);
 
     /* Private methods prototypes and instase variables*/
 private:
 
-    /* Structure for saving elements of the map*/
-    struct node {
-        KeyType NodeKey;
-        ValueType NodeValue;
+    /* Structure for storing key-value pairs and build BST*/
+    struct BSTNode {
+        KeyType Key;
+        ValueType Value;
+        int length;
+        BSTNode* left;
+        BSTNode* right;
     };
 
-    /* Vector in which stored value*/
-    VectorSHPP<node> vector;
-
-    /* Method: findKey
-     * Usage: int index = findKey(key);
-     * --------------------------------------------
-     * Returns index in the vector corresponding to key
+    /*
+     * Method: balanceTree
+     * ---------------------------------------------------
+     * Balancing of a binary tree
      */
-    int findKey(KeyType);
+    BSTNode* balanceTree(BSTNode* node);
+
+    /* Method: getNodeHeight
+     * --------------------------------------------------
+     * Counts the height of a binary tree
+     */
+    int getNodeHeight(BSTNode* node);
+
+    /* Method: getBalanceFactor
+     * -------------------------------------------------
+     * Counts the difference in height between the
+     * left and right subtree
+     */
+    int getBalanceFactor(BSTNode* node);
+
+    /* Method: fixHeight
+     * ------------------------------------------------
+     * Recalculates the height of a given node
+     */
+    void fixHeight(BSTNode* node);
+
+    /* Method: rotateRight
+     * -----------------------------------------------
+     * Rotates tree right around a given node
+     */
+    BSTNode* rotateRight(BSTNode* node);
+
+    /* Method: rotateRight
+     * -----------------------------------------------
+     * Rotates tree left around a given node
+     */
+    BSTNode* rotateLeft(BSTNode* node);
+
+    /* Method: insertNode
+     * -----------------------------------------------
+     * Inserts new node with received key and value to
+     * the tree and balance it after this
+     */
+    BSTNode* insertNode(BSTNode* node, KeyType key, ValueType value);
+
+    /* Method: removeNode
+     * -----------------------------------------------
+     * Removed node with received key and balance tree
+     * after this
+     */
+    BSTNode* removeNode(BSTNode* node, KeyType key);
+
+    /* Method: findMinNode
+     * -----------------------------------------------
+     * Returns pointer to the node with minimal key in
+     * the received sub-tree
+     */
+    BSTNode* findMinNode(BSTNode* node);
+
+    /* Method: removeMinNode
+     * -----------------------------------------------
+     * Removes minimal element of the received sub-tree
+     * and balance it after this
+     */
+    BSTNode* removeMinNode(BSTNode* node);
+
+    /* Method: findNode
+     * -----------------------------------------------
+     * Returns pointer to the node that contains received
+     * key or 0 if such node not found
+     */
+    BSTNode* findNode(BSTNode* node, KeyType key);
+
+    /* Method: clearBST
+     * -----------------------------------------------
+     * Frees all memoty allocated for the nodes of
+     * the binaty tree
+     */
+    void clearTree(BSTNode* node);
+
+    /* Current number of the elements in map*/
+    int count;
+
+    /* Contains link the top node*/
+    BSTNode* mainNode;
 };
 
 
-/* Implementation of all methods of MapSHPP class*/
 template<typename KeyType, typename ValueType>
 MapSHPP<KeyType, ValueType>::MapSHPP(){
-
+    mainNode = 0;
+    count = 0;
 }
 
 template<typename KeyType, typename ValueType>
 MapSHPP<KeyType, ValueType>::~MapSHPP(){
+    clearTree(mainNode);
+}
 
+template<typename KeyType, typename ValueType>
+int MapSHPP<KeyType, ValueType>::getNodeHeight(BSTNode *node){
+    if (node != 0){
+        return node->length;
+    }
+    return 0;
+}
+
+template<typename KeyType, typename ValueType>
+int MapSHPP<KeyType, ValueType>::getBalanceFactor(BSTNode *node){
+    return getNodeHeight(node->right) - getNodeHeight(node->left);
+}
+
+template<typename KeyType, typename ValueType>
+void MapSHPP<KeyType, ValueType>::fixHeight(BSTNode *node){
+    if (getNodeHeight(node->left) > getNodeHeight(node->right)){
+        node->length = getNodeHeight(node->left) + 1;
+    } else {
+        node->length = getNodeHeight(node->right) + 1;
+    }
+}
+
+template<typename KeyType, typename ValueType>
+typename MapSHPP<KeyType, ValueType>::BSTNode* MapSHPP<KeyType, ValueType>::rotateLeft(BSTNode *node){
+    BSTNode* newRoot = node->right;
+    node->right = newRoot->left;
+    newRoot->left = node;
+    fixHeight(newRoot);
+    fixHeight(node);
+    return newRoot;
+}
+
+
+template<typename KeyType, typename ValueType>
+typename MapSHPP<KeyType, ValueType>::BSTNode* MapSHPP<KeyType, ValueType>::rotateRight(BSTNode *node){
+    BSTNode* newRoot = node->left;
+    node->left = newRoot->right;
+    newRoot->right = node;
+    fixHeight(node);
+    fixHeight(newRoot);
+    return newRoot;
+}
+
+template<typename KeyType, typename ValueType>
+typename MapSHPP<KeyType, ValueType>::BSTNode* MapSHPP<KeyType, ValueType>::balanceTree(BSTNode *node){
+    fixHeight(node);
+    if (getBalanceFactor(node) == 2){
+        if (getBalanceFactor(node->right) < 0){
+            node->right = rotateRight(node->right);
+        }
+        return rotateLeft(node);
+    }
+    if (getBalanceFactor(node) == -2){
+        if (getBalanceFactor(node->left) > 0){
+            node->left = rotateLeft(node->left);
+        }
+        return rotateRight(node);
+    }
+    return node;
+}
+
+template<typename KeyType, typename ValueType>
+typename MapSHPP<KeyType, ValueType>::BSTNode* MapSHPP<KeyType, ValueType>::insertNode(BSTNode* node, KeyType key, ValueType value){
+    if (node == 0){
+        node = new BSTNode;
+        node->Key = key;
+        node->Value = value;
+        node->length = 1;
+        node->right = 0;
+        node->left = 0;
+        count++;
+        return node;
+    } else if (key > node->Key){
+        node->right = insertNode(node->right, key, value);
+    } else if (key < node->Key){
+        node->left = insertNode(node->left, key, value);
+    } else {
+        node->Value = value;
+    }
+    return balanceTree(node);
+}
+
+template<typename KeyType, typename ValueType>
+typename MapSHPP<KeyType, ValueType>::BSTNode* MapSHPP<KeyType, ValueType>::findNode(BSTNode* node, KeyType key){
+    if (key > node->Key){
+        if(node->right == 0){
+            return 0;
+        }
+        return findNode(node->right, key);
+    } else if (key < node->Key){
+        if (node->left == 0){
+            return 0;
+        }
+        return findNode(node->left, key);
+    }
+    return node;
+}
+
+template<typename KeyType, typename ValueType>
+typename MapSHPP<KeyType, ValueType>::BSTNode* MapSHPP<KeyType, ValueType>::removeNode(BSTNode* node, KeyType key){
+    if (key < node->Key){
+        node->left = removeNode(node->left, key);
+    } else if (key >node->Key){
+        node->right = removeNode(node->right, key);
+    } else if (key == node->Key){
+        BSTNode* leftNode = node->left;
+        BSTNode* rightNode = node->right;
+        delete node;
+        count--;
+        if (rightNode == 0){
+            return leftNode;
+        }
+        BSTNode* minNode = findMinNode(rightNode);
+        minNode->right = removeMinNode(rightNode);
+        minNode->left = leftNode;
+        return balanceTree(minNode);
+    }
+    return balanceTree(node);
+}
+
+template<typename KeyType, typename ValueType>
+typename MapSHPP<KeyType, ValueType>::BSTNode* MapSHPP<KeyType, ValueType>::findMinNode(BSTNode *node){
+    if (node->left != 0){
+        return findMinNode(node->left);
+    }
+    return node;
+}
+
+template<typename KeyType, typename ValueType>
+typename MapSHPP<KeyType, ValueType>::BSTNode* MapSHPP<KeyType, ValueType>::removeMinNode(BSTNode *node){
+    if(node->left == 0){
+        return node->right;
+    }
+    node->left = removeMinNode(node->left);
+    return balanceTree(node);
+}
+
+template<typename KeyType, typename ValueType>
+void MapSHPP<KeyType, ValueType>::clearTree(BSTNode *node){
+    if (node->left != 0){
+        clearTree(node->left);
+    }
+    if (node->right != 0){
+        clearTree(node->right);
+    }
+
+    delete node;
 }
 
 template<typename KeyType, typename ValueType>
 void MapSHPP<KeyType, ValueType>::put(KeyType key, ValueType value){
-    int index = findKey(key);
-    if(index == -1){
-        node tmpNode;
-        tmpNode.NodeKey = key;
-        tmpNode.NodeValue = value;
-        vector.add(tmpNode);
-
-    } else {
-        vector[index].NodeValue = value;
-
-    }
-}
-
-template<typename KeyType, typename ValueType>
-int MapSHPP<KeyType, ValueType>::findKey(KeyType key){
-    for(int i = 0; i < vector.size(); i++){
-        node tmpNode = vector.get(i);
-        if(tmpNode.NodeKey == key){
-            return i;
-        }
-    }
-    return -1;
+    mainNode = insertNode(mainNode, key, value);
 }
 
 template<typename KeyType, typename ValueType>
 ValueType MapSHPP<KeyType, ValueType>::get(KeyType key){
-
-    int index = findKey(key);
-    if(index == -1){
-        std::cout << "Error, key not found"<< std::endl;
-        exit(1);
-    }
-
-    return vector[index].NodeValue;
-
+    BSTNode* tmp = findNode(mainNode, key);
+    return tmp->Value;
 }
 
 template<typename KeyType, typename ValueType>
-int MapSHPP<KeyType, ValueType>::size() const{
-    return vector.size();
+int MapSHPP<KeyType, ValueType>::size(){
+    return count;
 }
 
 template<typename KeyType, typename ValueType>
 void MapSHPP<KeyType, ValueType>::remove(KeyType key){
-    int index = findKey(key);
-    if(index == -1){
-        std::cout << "Error, key not found"<< std::endl;
+    if(count > 0){
+        mainNode = removeNode(mainNode, key);
+    } else {
+        std::cout << "Error: Map is empty" << std::endl;
         exit(1);
     }
-
-    vector.remove(index);
 }
 
 template<typename KeyType, typename ValueType>
-bool MapSHPP<KeyType, ValueType>::isEmpty() const{
-    return vector.size() == 0;
+bool MapSHPP<KeyType, ValueType>::isEmpty(){
+    return count == 0;
 }
 
 template<typename KeyType, typename ValueType>
 void MapSHPP<KeyType, ValueType>::clear(){
-    vector.clear();
-}
-
-template<typename KeyType, typename ValueType>
-KeyType MapSHPP<KeyType, ValueType>::getKey(int index){
-    return vector[index].NodeKey;
+    clearTree(mainNode);
+    count = 0;
+    mainNode = 0;
 }
 
 template<typename KeyType, typename ValueType>
 bool MapSHPP<KeyType, ValueType>::containsKey(KeyType key){
-    bool res = true;
-    if(findKey(key) == -1) res = false;
-    return res;
+    return findNode(mainNode, key) != 0;
+}
+
+template<typename KeyType, typename ValueType>
+ValueType& MapSHPP<KeyType, ValueType>::operator [](KeyType key){
+    return findNode(mainNode, key)->Value;
 }
 
 #endif // MAPSHPP
